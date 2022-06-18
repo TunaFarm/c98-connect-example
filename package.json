@@ -3,11 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@cosmjs/amino": "^0.28.7",
     "@cosmjs/cosmwasm-stargate": "^0.28.7",
     "@cosmjs/launchpad": "^0.27.1",
     "@cosmjs/proto-signing": "^0.28.7",
     "@cosmjs/stargate": "^0.28.7",
     "@craco/craco": "^6.4.3",
+    "@keplr-wallet/provider": "^0.10.5",
     "@keplr-wallet/types": "^0.10.5",
     "crypto-browserify": "^3.12.0",
     "path-browserify": "^1.0.1",

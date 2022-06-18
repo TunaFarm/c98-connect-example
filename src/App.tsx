@@ -3,22 +3,16 @@ import logo from './logo.svg'
 import './App.css'
 import { AccountData } from '@cosmjs/amino'
 import { Undefinable } from './types/utils'
-import { OfflineDirectSigner, OfflineSigner } from '@cosmjs/proto-signing'
-import { lcdEndpoint, rpcEndpoint } from './utils'
-import {
-  HttpEndpoint,
-  SigningStargateClient,
-  StargateClient
-} from '@cosmjs/stargate'
+import { OfflineSigner } from '@cosmjs/launchpad'
+import {} from '@keplr-wallet/provider'
 
 const App = () => {
   const chainId = 'serenity-testnet-001'
 
   const [account, setAccount] = useState<Undefinable<AccountData>>(undefined)
-  const [signer, setSigner] =
-    useState<Undefinable<OfflineSigner & OfflineDirectSigner>>(undefined)
+  const [signer, setSigner] = useState<Undefinable<OfflineSigner>>(undefined)
 
-  const [walletAddr, setWalletAddr] = useState<string>('')
+  const [signature, setSignature] = useState<string>('')
 
   const connectWallet = async () => {
     if (!window.keplr) {
@@ -35,82 +29,34 @@ const App = () => {
       alert('No Aura wallet detected')
     }
 
-    console.log(offlineSigner)
-    console.log(accounts)
-
     setSigner(offlineSigner)
     setAccount(accounts[0])
   }
 
-  const sendToken = async () => {
+  const signHelloWorld = async () => {
+    if (!window.keplr) {
+      alert('Coin98 or Keplr extension need to be installed')
+      return
+    }
+
     if (!signer) {
-      alert('Cannot sign message without a signer')
+      alert('Signer not set')
       return
     }
 
-    if (!account) {
-      alert('Cannot sign message without an account')
-      return
-    }
+    const currentAccount = account || (await signer.getAccounts())[0]
 
-    if (!walletAddr || !walletAddr.trim()) {
-      alert('Cannot send tokens to unknown address')
-      return
-    }
-
-    let client: Undefinable<SigningStargateClient> = undefined
-    const httpEndpoint: HttpEndpoint = {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      },
-      url: rpcEndpoint
-    }
-
-    try {
-      client = await SigningStargateClient.connectWithSigner(
-        httpEndpoint,
-        signer
-      )
-      console.log(client)
-      return
-    } catch (error) {
-      console.log(error)
-    }
-
-    if (!client) {
-      alert('Cannot connect to RPC endpoint. Please try again later')
-      return
-    }
-
-    const amountFinal = {
-      denom: 'uaura',
-      amount: '1000'
-    }
-
-    const fee = {
-      amount: [
-        {
-          denom: 'uaura',
-          amount: '1000'
-        }
-      ],
-      gas: '200000'
-    }
-
-    const result = await client.sendTokens(
-      account?.address as string,
-      walletAddr,
-      [amountFinal],
-      fee,
-      ''
+    const data = Buffer.from(JSON.stringify({ msg: 'Hello World' })).toString(
+      'base64'
     )
 
-    if (result.code !== undefined && result.code !== 0) {
-      alert('Failed to send tx')
-    } else {
-      alert('Succeed to send tx:' + result.transactionHash)
-    }
+    const response = await window.keplr.signArbitrary(
+      chainId,
+      currentAccount.address,
+      data
+    )
+
+    setSignature(response.signature)
   }
 
   return (
@@ -121,12 +67,14 @@ const App = () => {
         {account && (
           <div>
             <h1>Welcome {account.address}</h1>
-            <button onClick={sendToken}>Send 1 AURA to: </button>
-            <input
-              onChange={(e) => setWalletAddr(e.target.value)}
-              value={walletAddr}
-              placeholder="Wallet Address here"
-            />
+          </div>
+        )}
+        {account && !signature && (
+          <button onClick={signHelloWorld}>Sign 'Hello World'</button>
+        )}
+        {signature && (
+          <div>
+            <h5>{signature}</h5>
           </div>
         )}
       </header>
